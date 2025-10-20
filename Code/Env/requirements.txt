@@ -1,0 +1,17 @@
+# Core scientific stack
+numpy>=1.23
+scipy>=1.10
+matplotlib>=3.7
+
+# Ottimizzazione multi-obiettivo
+pymoo>=0.6.1.1
+
+# Notebook e supporto kernel
+jupyterlab>=4.0
+ipykernel>=6.25
+notebook>=7.0
+
+# Qualità di vita
+pandas>=2.0
+seaborn>=0.12
+

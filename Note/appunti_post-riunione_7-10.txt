@@ -1,0 +1,143 @@
+################################################################################
+Review Ishiguchi.
+################################################################################
+
+Da tabelle:
+
+HV - 7-objective WFG
+[X]	HypE
+- NSGAIII
+[X]	theta-DEA
+
+HV - 7-objective MaF
+[X]	SPEA2SDE
+[X]	GrEA
+
+IGD - 7-objective WFG
+[X]	PICEA-g
+[X]	GrEA
+
+IGD - 7-objective MaF
+[X]	SPEA2SDE
+[X]	Two_Arch2
+
+Complessivamente (con classificazioni da review Ishiguchi):
+
+- HypE		C2 - Indicator-based
+- NSGAIII	C1 - Decomposition-based, C3 - Different secondary selection
+- theta-DEA	C1 - Decomposition-based, C4 - Different dominance relation
+- SPEA2SDE	C3 - Different secondary selection
+- GrEA		C4 - Different dominance relation
+- PICEA-g	C5 - Preference-based
+- Two_Arch2	C5 - Preference-based
+
+Commenti da review:
+
+- WFG
+	- Metodi diversi per IGD e HV perché il benchmark è semplice, dunque tutto
+	si riduce a valutare la diversità delle soluzioni. HV premia punti sul
+	border, mentre IGD la sparsità (più sensato)
+	- HypE performa bene in HV perché definito sulla metrica stessa
+	- PICEA-g performa consistentemente bene in IGD e mantiene una buona
+	diversità
+
+- MaF
+	- Meno eterogeneità dei metodi, perché la convergenza è più difficile
+	- HypE performa peggio, persino in HV, perché ha una capacità di
+	convergenza minore
+	- SPEA2SDE dimostra una forte capacità di convergenza
+
+################################################################################
+Lettura paper.
+################################################################################
+
+SDE
+	- Metodo per modificare la stima della densità in modo da adattare gli
+	algoritmi Pareto-based al caso MaOOP
+	- Tende a portare le soluzioni con bassa convergenza (non chiaramente
+	migliori di altre) in zone dense, così ogni stimatore di densità può
+	accorgersene e penalizzarle
+	- Impelemntazione semplice
+	- Lavora meglio su SPEA2 per via dello stimatore KNN
+SPEA2
+	- Versione originale datata (2001)
+	- Corregge (dell'originale):
+		- Fitness assignment: aggiunge informazioni sulla densità, per
+		penalizzare soluzioni troppo dense
+		- Archive truncation: corregge la cancellazione dall'archivio
+		penalizzando soluzioni troppo dense
+Appunti pratici
+	- Esiste implementazione in pymultiobjective
+	- Controllare che includa SDE
+
+################################################################################
+
+Two_Arch2
+	- Non necessita di reference points o altri settings manuali
+	- Cura due archivi in simultanea, uno per la convergenza (calcolo della
+	fitness con I_{epsilon}) e l'altro per la diversità (Pareto dominance +
+	preservazione di soluzioni estreme e distanti tra loro)
+	- Funziona bene su problemi MaOOP ingannevoli e multimodali
+	- Funziona male su problemi più semplici o con più funzioni di
+	trasformazione
+Appunti pratici
+	- Esiste implementazione in:
+	https://github.com/HandingWangXDGroup/Two_Arch2-in-python/tree/main
+
+################################################################################
+
+GrEA
+	- Si basa su di una griglia adattiva per ottenere informazioni su
+	convergenza e diversità, così da guidare opportunamente l'evoluzione
+	- Introduce 3 indicatori per il calcolo della fitness
+		- GR (Grid Ranking) -> somma delle coordinate di griglia
+		- GCD (Grid Crwding Distance) -> somma delle distanze di griglia
+		dai vicini
+		- GCPD (Grid Coordinate Point Distance) -> distanza dal punto
+		utopico in griglia
+		- GR e GCPD guidano convergenza, GCD diversità
+		- Gli indicatori vengono valutati nell'ordine esposto sopra
+	- Corregge dinamicamente la fitness degli altri elementi quando uno
+	viene selezionato per l'archivio
+
+Appunti pratici
+	- Esiste implementazione in pymultiobjective
+
+################################################################################
+
+PICEA-g
+	- Co-evolve una popolazione di soluzioni ed una di reference vectors
+	(s e G rispettivamente)
+	- La co-evoluzione costituisce un meccanismo antagonista che aumenta la
+	pressione verso il PF
+	- Dopo l'assegnazione della fitness, per il troncamento viene valutata
+	anche la dominanza secondo Pareto
+
+Appunti pratici
+	- Non ho trovato implementazione
+
+################################################################################
+
+theta-DEA
+	- Si ispira a NSGA-III e MOEA/D
+		- Usa vettori di riferimento (entrambi)
+		- Selezione analoga a NSGA-III, ma randomica su set theta-
+		dominati
+		- theta-dominance funziona un po' come un'aggregazione scalare
+		che definisce un sottoproblema (MOEA/D)
+	- Introduce la theta-dominance, che realizza convergenza e diversità
+
+Appunti pratici
+	- Per ora trovata una sola implementazione, in Java:
+	https://github.com/yyxhdy/ManyEAs
+
+################################################################################
+
+Hype
+	- Utilizza il calcolo di HV come indicatore per ricavare la fitness in
+	fase di selezione (sia ambientale che non)
+	- Per un numero di obiettivi alto, usa Monte Carlo sampling per
+	approssimare la misura di Lebesgue associata al volume indicato da P
+
+Appunti pratici
+	- Esiste implementazione in pymultiobjective

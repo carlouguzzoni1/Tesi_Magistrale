@@ -1,0 +1,25 @@
+################################################################################
+Implementazioni.
+################################################################################
+
+- Directional HV
+
+################################################################################
+Considerazioni.
+################################################################################
+
+- Non esistono criteri validi per fissare il Nadir point
+  Si possono estrarre direzioni con una distribuzione di Dirichlet
+- Metriche da confrontare:
+	- R
+	- IGD+ con simplesso (vedi notebook Billa)
+	- Directional HV
+
+################################################################################
+To-dos.
+################################################################################
+
+- Look-up tassonomia dei metodi che hanno toppato esperimenti su 7 dimensioni
+  (~5 in totale)
+- Controllare esistenza delle relative implementazioni in altre librerie per MaOO
+  (https://pypi.org/project/pymultiobjective/)

@@ -1,0 +1,38 @@
+Nessuno degli articoli letti presenta un metodo basato su forze repulsive esplicite, come quello proposto.
+Tuttavia, alcuni di essi considerano più o meno direttamente la densità delle soluzioni:
+
+- SPEA2: calcola la fitness come F(i) = R(i) + D(i), dove R(i) è una funzione della forza dei dominatori di i e D(i) un termine legato alla densità, che cala con la distanza dal k-esimo vicino.
+Inoltre, la densità viene in qualche modo considerata anche durante il troncamento, eliminando prioritariamente soluzioni vicine tra loro
+
+- SDE: metodo proposto per modificare la stima della densità in MOEA esistenti per disincentivare quelli poco convergenti, viene usato con particolare efficacia da SPEA2 per via dell'adattabilità con il criterio KNN
+
+- Two_Arch2: l'archivio adibito alla preservazione della diversità usa prioritariamente la dominanza e secondariamente una Lp-norm (con p < 1) per conservare le soluzioni più lontane dai punti già in archivio.
+L'altro archivio (cioè quello volto a garantire la convergenza) usa comunque le distanze, calcolando la fitness degli individui in basse alla distanza minima necessaria ad una soluzione per dominarne un'altra 
+
+Per quanto riguarda gli altri metodi, non vi sono particolari similitudini con quello proposto.
+
+Venendo alle categorie:
+
+- Hype è l'unico metodo indicator-based (e lo è in modo marcato)
+
+- GrEA introduce un diverso tipo di dominanza (ie. "grid dominance")
+
+- theta-DEA introduce a sua volta un diverso tipo di dominanza
+
+- SPEA2SDE applica un peculiare tipo di selezione secondaria (ambientale) basandosi su dominanza e distanze
+
+- PICEA-g è preference-based ed evolve l'insieme dei preference vectors assieme a quello delle soluzioni
+
+- Two_Arch2 non sembra appartenere a nessuna categoria in particolare, anche se la review di Ishiguchi lo cataloga come C5 (preference-based)
+
+NOTA: non ho riportato nulla riguardo NSGA-III, perché se ho ben capito il paper si articola in 2 parti, e non era mia intenzione farmi attendere oltre visto e considerato che (da quanto ricordo) i relatori lo conoscono bene. È comunque mia intenzione recuperarne la lettura nei prossimi giorni.
+
+Lascio qui sotto le references dirette per l'eventuale lettura dei paper:
+
+- Two_Arch2: https://ieeexplore.ieee.org/document/6883177
+- HypE: https://eckartzitzler.ch/img/publications/bz2011a.pdf
+- GrEA: https://ieeexplore.ieee.org/document/6400243
+- theta-DEA: https://ieeexplore.ieee.org/document/6400243
+- PICEA-g: https://ieeexplore.ieee.org/document/6215034
+- SPEA2: https://kdd.cs.ksu.edu/Courses/CIS830/Handouts/P8.pdf
+- SDE: https://bura.brunel.ac.uk/bitstream/2438/12061/1/Fulltext.pdf
