@@ -1,0 +1,30 @@
+NOTE PRE-RIUNIONE DATA 30/10
+
+Ellipsoid
+	- Adottata versione Gram-Schmidt ottimizzata
+	
+	-> Ok.
+	
+	- Dubbio sulla formula per il calcolo di G.
+	  Quella da file .py è diversa rispetto quella su paper. Quale è corretta?
+	  
+	-> Controllare che T * (1, 0, ..., 0) = w_b. Se è così, non va bene la trasformazione preesistente.
+	
+	- Uso di epsilon^2 nel calcolo della forza di repulsione adattiva.
+	  Non dovrebbe essere semplicemente epsilon?
+	  
+	-> Usare il solo epsilon (differenziare le variabili).
+
+R-metric
+	- Il paper assume che lo spazio degli obiettivi sia normalizzato in [0, 1]
+	Quale criterio adottare per la normalizzazione?
+	
+	-> Normalizzare min/max.
+
+PHI (Directional HV)
+	- Trovata l'implementazione di Emmerich e modificata per aderire al paper
+	- Trovata l'implementazione del metodo PHI+ (evoluzione di PHI)
+	  Non ancora modificata
+
+	-> Il "+" di solito indica pareto-compliance (la metrica migliore su due set indica dominanza).
+	-> Usare PHI+ solo se PHI non funziona (es. se PHI e R-metric vanno in direzioni opposte).

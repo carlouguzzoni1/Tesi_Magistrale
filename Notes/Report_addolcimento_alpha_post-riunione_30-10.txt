@@ -1,0 +1,71 @@
+# 1 - Intro
+
+Le attività di lavoro si sono concentrate dapprima in un massiccio refactoring
+del lavoro messo a disposizione su https://github.com/mattiabilla/EB-MOO.
+Si sono documentati tutti i passaggi svolti nelle classi relative al metodo
+Ellipsoid ed alle metriche implementate (R-metric e PHI), modularizzando dove
+necessario.
+
+IMPORTANTE PER LA LETTURA DEI FILES:
+    - Le correzioni vengono riportate con commenti che iniziano con # NOTE
+    - Le funzionalità in fase di test con commenti che iniziano con # TEST
+    - I passaggi sui quali persistono dubbi con commenti tipo # FIXME
+    - Le cose da fare con # TODO
+
+La struttura della repo è organizzata per lavorare in un virtual environment
+Python, copiando dentro e fuori tutti i files necessari tramite script.
+Questo approccio dovrebbe garantire una buona compatibilità, rapidità e
+leggerezza delle procedure.
+
+# 2 - Dubbi
+
+Rivedere tutto il codice nel dettaglio ha portato alla luce alcune questioni da
+discutere:
+
+- In Ellipsoid (../Code/Ellipsoid/Ellipsoid.py), w necessita di essere
+  normalizzato prima di definrie la direzione di fairness?
+  Nel draft, u = w / \norm{w} viene utilizzato solo nella parte teorica
+  (Capitolo 1), ma per i calcoli della utility (sia parte metrica che forza
+  repulsiva) si usa \bar{u}
+
+- La formula usata per il calcolo di t0 in EllipsoidSurvival
+  (../Code/Ellipsoid/EllipsoidSurvival.py) usa la funzione min(), ma sul draft
+  viene riportata mean()
+  Quale dei due usi è corretto?
+
+- La classe che implementa la selezione di Ellipsoid (sempre EllipsoidSurvival)
+  non dovrebbe necessitare dell'uso di w (reference direction), ma solo di \bar{u}
+  (fairness direction normalizzata)
+  Eliminare, oppure ho erroneamente eliminato qualche passaggio?
+
+Alcune questioni riguardo l'addolcimento di alpha:
+
+- Si è implementata una decrescita simile a quella applicata sui learning rate
+  Esempio pratico: si tiene nota di max # soluzioni non dominate incontrate, se
+  per 5 iterazioni non aumenta, si applica un fattore moltiplicativo costante ad
+  alpha (il quale va ad accumularsi ogni volta che scadono le 5 iterazioni)
+  La metodica corrisponde alle aspettative? Quali alternative sono possibili?
+
+- Organizzando un veloce confronto a livello di test
+  (../Tests/test_adaptive_alpha.ipynb), si è visto che diminuire molto leggermente
+  alpha (es. fattore costante 0.9999 quando epsilon = 1.2 e alpha = 0.1)
+  con la metodica riportata sopra può contribuire ad includere alcune soluzioni
+  "rimaste indietro" al PF e migliorare (anche se di poco) le performances.
+  Allo stesso modo, aumentare leggermente (es. fattore costante 1.00025 quando
+  epsilon = 1.2 e alpha = 0.1) la repulsione, tende a sparpagliare meglio i punti
+  nello spazio, migliorando leggermente i valori delle metriche
+  Si vedano ../Tests/test_adaptive_alpha.ipynb e ../Ellipsoid/EllipsoidSurvival.py
+  Naturalmente, il fattore moltiplicativo costante di alpha necessita di tuning; i
+  valori riportati sono frutto di osservazioni empiriche
+
+Cose prettamente relative al set-up degli esperimenti:
+
+- Quale reference point utilizzare per il calcolo di PHI? Punto utopico, media dei punti sul PF, o altro?
+
+- Quale reference direction utilizzare per una suite di esperimenti? Va bene una con componenti identiche, oppure una più particolare?
+
+# 3 - Altro
+
+Si è prodotta anche una test suite completa (su tutti i problemi DLTZ) per confrontare il metodo proposto con/senza modifica di alpha.
+Indipendentemente da ciò che si deciderà di fare, la si può utilizzare come scheletro per altri test.
+Importante ricordarsi di fare normalizzazione min/max come si era discusso, anche se i problemi di benchmark dovrebbero lavorare su intervalli contenuti

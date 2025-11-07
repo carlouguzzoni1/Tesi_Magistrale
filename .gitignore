@@ -1,9 +1,9 @@
 # Ambienti e cache Python.
 venv/
-env/
 __pycache__/
 *.pyc
 
 # Letteratura di riferimento.
-Letteratura/
+Docs/Corso_MOO_Guidetti/
+Docs/Letteratura/
 *.pdf

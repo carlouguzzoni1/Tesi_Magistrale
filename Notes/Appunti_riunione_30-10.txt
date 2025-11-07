@@ -1,0 +1,15 @@
+NOTE RIUNIONE DATA 30/10
+
+Repulsione e fattore di anisotropia devono avere una relazione ben definita.
+In realtà, si vuole fare il tuning del solo fattore di anisotropia.
+
+# Correzione alpha
+
+- Occorre ammorbidire alpha quando il numero di punti non-dominati inizia a calare (consistentemente, ovvero 5 volte, ad esempio). Addolcimento di alpha -> alpha *= 0.9.
+
+- Fare un set-up di esperimenti come quelli della repo, per vedere se conviene usare alpha adattivo o meno. Utilizzare lo stesso problema di benchmark. Usare tutte le metriche disponibili.
+
+- Verificare che per epsilon ~ 1 ed alpha adattivo il comportamento sia quello di sparpagliare i punti (in questo caso IGD è rilevante, negli altri trascurare).
+Con alpha adattivo, IGD dovrebbe essere ancora una metrica buona. Allo stesso tempo, il comportamento atteso è il calare del numero di punti "volanti" sul PF.
+
+# Organizzare sessione completa di esperimenti

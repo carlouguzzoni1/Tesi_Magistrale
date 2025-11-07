@@ -1,0 +1,7 @@
+- Metodo di addolcimento per alpha: valutare il massimo numero di
+	soluzioni non-dominate globalmente e confrontarlo con una finestra di 5?
+	
+- Normalizzare per ogni problema negli esperimenti
+	
+- Creare notebook per rappresentazione grafica degli esperimenti di
+	confronto tra Ellipsoid con e senza addolcimento di alpha

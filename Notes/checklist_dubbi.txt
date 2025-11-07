@@ -1,0 +1,13 @@
+- In Ellipsoid, w necessita di essere normalizzato prima di definire la direzione
+  di fairness?
+
+- La formula per il calcolo di t0 è corretta, o allude ad una particolare semplificazione/sostituzione
+  che non ho capito?
+  
+- w deve essere usato in qualche modo da EllipsoidSurvival?
+
+- Quale w utilizzare per gli esperimenti? Ne va bene una "bilanciata"?
+
+- Quale RP utilizzare per il calcolo di PHI?
+
+- Resettare alpha una volta che le soluzioni non-dominate sono aumentate?
