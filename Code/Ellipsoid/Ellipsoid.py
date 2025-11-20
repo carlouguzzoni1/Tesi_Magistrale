@@ -33,11 +33,15 @@ class Ellipsoid(GeneticAlgorithm):
     def __init__(
         self,
         w,
-        epsilon=0.5,
-        alpha=0,
+        alpha=0.1,
+        epsilon=2,
         adapt_alpha=True,
         soften_alpha=False,
+        alpha_decay=0.9,
+        patience=5,
+        t0_mode="mean",
         pop_size=100,
+        survival=None,
         sampling=FloatRandomSampling(),
         selection=RandomSelection(),
         crossover=SBX(eta=30, prob=1.0),
@@ -52,11 +56,15 @@ class Ellipsoid(GeneticAlgorithm):
         
         Args:
             w (np.ndarray): The weights of the objectives.
-            epsilon (float, optional): Anisotropic factor. Defaults to 0.5.
-            alpha (float, optional): Base Coulomb-like repulsion / utility function ratio. Defaults to 0.
+            alpha (float, optional): Base Coulomb-like repulsion / utility function ratio. Defaults to 0.1.
+            epsilon (float, optional): Anisotropic factor. Defaults to 2.
             adapt_alpha (bool, optional): Whether to adapt alpha. Defaults to True.
-            soften_alpha (bool, optional): Whether to soften alpha. Defaults to True.
+            soften_alpha (bool, optional): Whether to soften alpha. Defaults to False.
+            alpha_decay (float, optional): Alpha decay factor. Defaults to 0.99.
+            patience (int, optional): Patience for alpha adaptation. Defaults to 5.
+            t0_mode (str, optional): T0 mode. Defaults to "mean".
             pop_size (int, optional): Population size. Defaults to 100.
+            survival (Survival, optional): Survival strategy. Defaults to EllipsoidSurvival().
             sampling (Sampling, optional): Sampling strategy. Defaults to FloatRandomSampling().
             selection (Selection, optional): Selection strategy. Defaults to RandomSelection().
             crossover (Crossover, optional): Crossover strategy. Defaults to SBX(eta=30, prob=1.0).
@@ -83,9 +91,6 @@ class Ellipsoid(GeneticAlgorithm):
         self.soften_alpha = soften_alpha
         self.epsilon = epsilon      # Anisotropic factor.
 
-        # FIXME: is this necessary for some reason or just a good practice?
-        # In the paper, u = w / \norm{w} is used just in the first theoric part.
-        # Thereafter, only \bar{u} is used.
         # Normalize the reference direction.
         self.w = w / np.linalg.norm(w)
         
@@ -119,14 +124,20 @@ class Ellipsoid(GeneticAlgorithm):
         
         # If no survival strategy is provided, use the default one.
         if survival is None:
+            self.alpha_decay = alpha_decay
+            self.patience = patience
+            self.t0_mode = t0_mode
+            
             survival = EllipsoidSurvival(
-                w,
-                u_b,
-                epsilon=self.epsilon,
+                u_b=u_b,
+                G=self.G,
                 alpha=self.alpha,
+                epsilon=self.epsilon,
                 adapt_alpha=self.adapt_alpha,
                 soften_alpha=self.soften_alpha,
-                G=self.G
+                alpha_decay=self.alpha_decay,
+                patience=self.patience,
+                t0_mode=self.t0_mode
                 )
 
         super().__init__(

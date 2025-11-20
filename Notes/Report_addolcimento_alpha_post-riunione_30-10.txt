@@ -27,16 +27,22 @@ discutere:
   Nel draft, u = w / \norm{w} viene utilizzato solo nella parte teorica
   (Capitolo 1), ma per i calcoli della utility (sia parte metrica che forza
   repulsiva) si usa \bar{u}
+  
+  -> È good practice
 
 - La formula usata per il calcolo di t0 in EllipsoidSurvival
   (../Code/Ellipsoid/EllipsoidSurvival.py) usa la funzione min(), ma sul draft
   viene riportata mean()
   Quale dei due usi è corretto?
+  
+  -> Usare mean()
 
 - La classe che implementa la selezione di Ellipsoid (sempre EllipsoidSurvival)
   non dovrebbe necessitare dell'uso di w (reference direction), ma solo di \bar{u}
   (fairness direction normalizzata)
   Eliminare, oppure ho erroneamente eliminato qualche passaggio?
+
+  -> Rimuovere w
 
 Alcune questioni riguardo l'addolcimento di alpha:
 
@@ -69,3 +75,7 @@ Cose prettamente relative al set-up degli esperimenti:
 Si è prodotta anche una test suite completa (su tutti i problemi DLTZ) per confrontare il metodo proposto con/senza modifica di alpha.
 Indipendentemente da ciò che si deciderà di fare, la si può utilizzare come scheletro per altri test.
 Importante ricordarsi di fare normalizzazione min/max come si era discusso, anche se i problemi di benchmark dovrebbero lavorare su intervalli contenuti
+
+
+# Estrarre media e std con t0 calcolato da min/mean/trimmed_mean e confrontare.
+# Provare un'implementazione per aumento/riduzione automatico di alpha. Quando le nondom sono alte e a livello cap, si deve alzare alpha. Quando basse e variabili, abbassare alpha.

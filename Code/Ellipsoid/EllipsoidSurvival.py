@@ -7,6 +7,8 @@ import numpy as np
 from pymoo.core.survival import Survival
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
+from scipy.stats import trim_mean
+
 
 
 class EllipsoidSurvival(Survival):
@@ -14,33 +16,45 @@ class EllipsoidSurvival(Survival):
     Survival strategy guided by ellipsoidal metric and Coulomb-like repulsion.
     """
 
-    def __init__(self, w, u_b, epsilon, alpha, adapt_alpha, soften_alpha, G):
+    def __init__(
+        self,
+        u_b,
+        G,
+        alpha,
+        epsilon,
+        adapt_alpha=True,
+        soften_alpha=False,
+        alpha_decay=0.9,
+        patience=5,
+        t0_mode="mean"
+        ):
         """
         Initialize the survival strategy.
         
         Args:
-            w (np.ndarray): The weights of the objectives.
             u_b (np.ndarray): The normalized fairness direction.
-            epsilon (float): Anisotropic factor.
-            alpha (float): Base Coulomb-like repulsion / utility function ratio.
-            adapt_alpha (bool): Whether to adapt alpha.
-            soften_alpha (bool): Whether to soften alpha.
             G (np.ndarray): Metric matrix.
+            alpha (float): Base Coulomb-like repulsion / utility function ratio.
+            epsilon (float): Anisotropic factor.
+            adapt_alpha (bool, optional): Whether to adapt alpha. Defaults to True.
+            soften_alpha (bool, optional): Whether to soften alpha. Defaults to True.
+            alpha_decay (float, optional): Decay factor for alpha. Defaults to 0.99.
+            patience (int, optional): Patience for alpha adaptation. Defaults to 5.
+            t0_mode (str, optional): Mode for t0 computation. Defaults to "mean".
         """
         
         super().__init__(filter_infeasible=True)
 
-        # FIXME: w remains unused.
-        self.w = w
         self.u_b = u_b
-        self.epsilon = epsilon
+        self.G = G
         self.alpha = alpha
+        self.epsilon = epsilon
         self.adapt_alpha = adapt_alpha
         self.soften_alpha = soften_alpha
-        self.G = G
+        self.t0_mode = t0_mode
 
         # Initially, set the ideal point to infinity and no nadir point.
-        self.ideal = np.full(len(w), np.inf)
+        self.ideal = np.full(len(u_b), np.inf)
         self.nadir = None
         
         self.alpha_history = []
@@ -48,13 +62,14 @@ class EllipsoidSurvival(Survival):
         # TEST: now testing. If approved, then fully parametrize or create a
         # separate class.
         if soften_alpha:
-            self.base_multiplier = 1
-            # self.alpha_decay = 1.00025
-            self.alpha_decay = 0.99999
-            self.alpha_multiplier = self.base_multiplier
+            # self.base_multiplier = 1
+            self.alpha_decay = alpha_decay
+            # TEST: trying with a specular value that is not equal to the decay.
+            self.alpha_recover = 1 + (1 - self.alpha_decay)
+            # self.alpha_multiplier = self.base_multiplier
             self.nondom_count_history = []
             self.best_nondom_count = 0
-            self.patience = 5
+            self.patience = patience
             self.stagnation_counter = 0
 
     # ------------------------------------------------------------------
@@ -92,9 +107,13 @@ class EllipsoidSurvival(Survival):
         # Remove the diagonal.
         rec_dis -= np.eye(rec_dis.shape[0])
 
-        # FIXME: why use min instead of mean?
-        # Compute tahu0 (see the paper).
-        t0 = np.min(F @ self.u_b)
+        # Compute tahu0 (see the paper). Here, different ways are available.
+        if self.t0_mode == "min":
+            t0 = np.min(F @ self.u_b)
+        elif self.t0_mode == "mean":
+            t0 = np.mean(F @ self.u_b)
+        elif self.t0_mode == "trim_mean":
+            t0 = trim_mean(F @ self.u_b, proportiontocut=0.1)
 
         # Adapt alpha dynamically, if enabled.
         if self.adapt_alpha:
@@ -111,6 +130,7 @@ class EllipsoidSurvival(Survival):
         # ellipsoidal distance + Coulombic repulsion term.
         dir_scores = np.sqrt(np.diag(F @ self.G @ F.T)) + alpha * np.sum(rec_dis, axis=0)
 
+        # FIXME: is n_survive = len(pop) / 2?
         # Select survivors with minimal score (best trade-off).
         survivors = dir_scores.argsort()[:n_survive]
 
@@ -125,13 +145,70 @@ class EllipsoidSurvival(Survival):
         for p in selected[fronts[0]]:
             p.set("opt", True)
 
-        # TEST: now testing. Decide whether to restore original parameters
-        # once non-dominated count raises.
-        # Soften alpha for the next iteration, if enabled.
         if self.soften_alpha:
-            # Append the number of non-dominated solutions in the current front to the history.
-            self.nondom_count_history.append(len(fronts[0]))
+            self._soften_alpha(algorithm, fronts, pop)
+
+        # Update nadir point.
+        self.nadir = selected.get("F").max(axis=0)
+        
+        return selected
+    
+    # ------------------------------------------------------------------
+    
+    def _soften_alpha(self, algorithm, fronts, pop):
+        # If it is the first generation, don't append the number of non-dominated
+        # solutions, as at initialization it is equal to the maximum.
+        # Return, instead.
+        if algorithm.n_gen == 1:
+            return
+        
+        # Append the number of non-dominated solutions to the history.
+        nondom_count = len(fronts[0])
+        self.nondom_count_history.append(nondom_count)
+        
+        # If there was a previous generation (ie it is possible to compare the
+        # number of non-dominated solutions).
+        if algorithm.n_gen > 2:
+            # Get the number of non-dominated solutions of the previous generation.
+            prev_nondom_count = self.nondom_count_history[-2]
+        else:
+            # Else, just return.
+            return
+        
+        # Set actual population size (pop is the population before the selection).
+        pop_size = len(pop) / 2
+        
+        # Compute the ratio between non-dominated solutions and the population size.
+        ratio = nondom_count / pop_size
+        
+        # If the ratio is less than a consistent part of the population (ie. 0.95),
+        # soften alpha.
+        if ratio > 0.9:
+            # Reset the stagnation counter.
+            self.stagnation_counter = 0
+            # Increment alpha.
+            self.alpha *= self.alpha_recover
+            print("SOFTENING - Alpha recovered!")
+        # Else, if the non-dominated count is less than or equal to the previous one.
+        elif nondom_count <= self.best_nondom_count:
+            # Increment stagnation counter.
+            self.stagnation_counter += 1
             
+            # If patience is reached.
+            if self.stagnation_counter >= self.patience:
+                # Soften alpha.
+                self.alpha *= self.alpha_decay
+                # Reset stagnation counter.
+                self.stagnation_counter = 0
+                print("SOFTENING - Alpha softened!")
+        # Else, ratio is below goal but the non-dominated count is not decreasing.
+        else:
+            self.best_nondom_count = nondom_count
+            self.stagnation_counter = 0
+        
+        """
+        # Apply softening until a consistent part (95%) of the population is non-dominated.
+        if np.max(self.nondom_count_history) < 0.95 * pop_size:
             # If a new max non-dominated count is found, reset stagnation counter.
             if self.nondom_count_history[-1] > self.best_nondom_count:
                 self.best_nondom_count = self.nondom_count_history[-1]
@@ -142,15 +219,11 @@ class EllipsoidSurvival(Survival):
                 
                 # If stagnation counter is reached, soften alpha.
                 if self.stagnation_counter >= self.patience:
-                    self.alpha_multiplier *= self.alpha_decay
+                    # self.alpha_multiplier *= self.alpha_decay
                     self.stagnation_counter = 0
-                    self.alpha *= self.alpha_multiplier
+                    self.alpha *= self.alpha_decay
                     print("Alpha softened!")
-
-        # Update nadir point.
-        self.nadir = selected.get("F").max(axis=0)
-        
-        return selected
+        """
     
     # ------------------------------------------------------------------
     

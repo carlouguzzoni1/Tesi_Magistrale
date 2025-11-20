@@ -7,3 +7,6 @@ __pycache__/
 Docs/Corso_MOO_Guidetti/
 Docs/Letteratura/
 *.pdf
+
+# Plot vari.
+*.png

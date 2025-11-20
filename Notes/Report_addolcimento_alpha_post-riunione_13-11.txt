@@ -1,0 +1,78 @@
+# 1 - Intro
+
+La sessione di lavoro si è articolata attorno a 2 task principali:
+
+- Capire se e quanto l'utilizzo di mean() anziché min(), per il calcolo di \tahu_0
+(vedere paper), fosse instabile
+
+- Adattare il metodo per l'addolcimento di alpha in modo da correggere ottenere un
+buon trade-off tra numero di soluzioni non-dominate e diversità (oltre che performance)
+
+Sono state innanzitutto necessarie modifiche (più una leggera rifattorizzazione del 
+costruttore) di ../Code/Ellipsoid/EllipsoidSurvival.py.
+
+Per osservare il comportamento del metodo modificato, si è messo a punto il file
+../Tests/test_tahu0.py.
+Questo consente una visualizzazione completa di esperimenti con/senza addolcimento e
+relative metriche e statistiche, per diversi valori di alpha. Il valore di epsilon è
+stato mantenuto costante e prossimo ad 1 (epsilon = 1.2), sulla scia di quanto detto
+negli ultimi rapporti.
+
+# 2 - Dettagli
+
+Riguardo a ../Code/Ellipsoid/EllipsoidSurvival.py (strategia di sopravvivenza per
+il metodo evolutivo):
+
+- Errori:
+    - La moltiplicazione di alpha per il fattore moltiplicativo cumulativo veniva
+    fatta sull'alpha reale e non su quello di base (come invece si era pensato di fare
+    nella fase embrionale dell'algoritmo), il quale veniva utilizzato per il calcolo
+    della utility.
+    Risultato: alpha risultava troppo rimpicciolito, anche con un decay leggero (es. 0.99).
+    Per modificare alpha, ora viene semplicemente fatto: alpha *= alpha_decay
+    
+    - Contrariamente a quanto viene fatto per i learning rate, non si attendevano k
+    iterazioni di non-crescita nel numero di soluzioni non-dominate, bensì k iterazioni
+    di non-crescita rispetto al massimo conosciuto.
+    Questo faceva sì che l'algoritmo spingesse in modo drastico verso un alto numero di
+    soluzioni non-dominate, decrescendo notevolmente alpha. E, congiuntamente al punto
+    sopra, contribuiva a creare le casistiche nelle quali le soluzioni collassavano in
+    una porzione di spazio minuscola.
+    Cionondimeno, prove effettuate con una decrescita simil-learning rate, hanno messo
+    in evidenza il fatto che la decrescita di alpha non era sufficientemente rapida su
+    una run da 300 iterazioni.
+    Per questo motivo, il metodo aggiornato proposto mantiene il vecchio approccio
+    
+- Incremento di alpha:
+    Nella pratica, l'intenzione per questo task era quella di produrre una modifica del
+    metodo che:
+        - Quando il numero di soluzioni non-dominate era sufficientemente alto, alzasse
+        alpha (dunque la repulsione)
+        - Quando il numero di soluzioni non-dominate tendeva a stagnare, diminuisse alpha
+    
+    In questo modo, sarebbe stato possibile sparpagliare le soluzioni sul PF, cercando di
+    avvicinarvi quelle che per via della forza repulsiva rimanevano "dietro" rispetto ad
+    altre
+        
+    Come si diceva al punto precedente, per tendere ad incrementare costantemente il numero
+    di soluzioni non-dominate si è preso come riferimento il numero massimo fin lì raggiunto.
+    A bilanciare questo effetto, si è introdotto un nuovo meccanismo che, una volta raggiunta
+    una porzione sufficientemente alta (es. 0.90) di soluzioni non-dominate rispetto al totale,
+    incrementasse alpha.
+    L'incremento di alpha è speculare alla decrescita rispetto ad 1 (es. alpha_decay = 0.99 ->
+    alpha_recover = 1.01)
+
+# 4 - Risultati
+
+L'output di test_tahu0.py mostra chiaramente che il metodo proposto funziona ed è consistente
+rispetto alla funzione scelta per il calcolo di \tahu_0.
+
+- mean() -> tende a sparpagliare le soluzioni, perché la forza repulsiva non viene
+decrementata altrettanto fortemente come da min(). Questo effetto è accentualto con alpha più
+alti. Il metodo aumenta il numero di soluzioni non-dominate, portandole più vicine al PF.
+
+- min() -> tende a far collassare le soluzioni verso piccoli volumi nello spazio. In questo
+caso, alpha è piccolo e consente di raggiungere un numero alto di soluzioni non-dominate
+relativamente presto. La successiva crescita di alpha le "apre" sul PF, coprendo un'area maggiore.
+In questo caso, contrariamente a quello descritto sopra, il numero di soluzioni non-dominate
+cala, seppur leggermente.
